@@ -1,56 +1,43 @@
-# AI Automation & Code Audit Log
+# AI Prompt & Hallucination Audit Log
 
-> **Student Name:** [Your Name]  
-> **Student ID:** [Your ID]  
-> **AI Tool Used:** [e.g., ChatGPT 4o / Claude 3.5 Sonnet / Gemini 1.5 Pro]  
-
----
-
-## 1. Executive Summary
-Briefly explain how you used AI as an engineering tool to translate your Markdown documentation into executable Bash scripts (`deploy_appliance.sh` and `verify_appliance.sh`).
+## 1. Environment & Model Details
+- **AI Model Used:** Google Gemini
+- **Date:** October 30, 2026
+- **Target Platform:** Ubuntu Server 24.04 LTS (x86_64)
+- **Role:** OSYS3030 Multi-Homed Network Appliance Automation
 
 ---
 
-## 2. Prompt Log
+## 2. AI Prompts Provided
 
-### 2.1 Deployment Script Prompt
-Paste the exact prompt you gave the AI to generate `deploy_appliance.sh`:
+### Deployment Automation Prompt:
+> "Act as a Senior Linux DevOps Engineer. Using my working configuration files for SSH hardening, BIND9 DNS, Kea DHCPv4, and UFW with NAT masquerading on Ubuntu 24.04, generate a production-ready Bash script (`scripts/deploy_appliance.sh`). The script must install all packages, back up existing configs with timestamps, deploy custom config files into `/etc/`, set strict file permissions, and start/enable services in the correct dependency order."
 
-```text
-[Paste your prompt here]
-```
-
-### 2.2 Verification Script Prompt
-Paste the exact prompt you gave the AI to generate `verify_appliance.sh`:
-
-```text
-[Paste your prompt here]
-```
+### Verification Test Suite Prompt:
+> "Write a companion Bash verification script (`scripts/verify_appliance.sh`) with formatted `[ PASS ]` / `[ FAIL ]` indicators that tests every service on the appliance: verifies configuration syntax (`named-checkconf`, `kea-dhcp4 -t`), confirms systemd active states, checks listening ports (UDP 53, UDP 67, TCP 22), validates UFW rules and iptables NAT table entries, and tests local DNS resolution via dig."
 
 ---
 
-## 3. Human-in-the-Loop Audit & Hallucination Corrections
+## 3. Discovered Hallucinations, Edge Cases & Human Debugging
 
-AI models frequently introduce errors when writing infrastructure automation. Document at least 2 specific errors, bugs, or omissions the AI made in the generated scripts and how you fixed them:
+### Issue 1: Hardcoded Default SSH Port Assumption
+- **AI Bug:** The initial verification script checked exclusively for `ss -tlnp | grep ':22 '`.
+- **System Reality:** The hardened SSH configuration was set to a non-standard port (`2222`), causing an immediate false `[ FAIL ]` on TCP port 22 even though the SSH daemon was active and functional.
+- **Human Fix:** 
+  1. Updated `scripts/verify_appliance.sh` socket audit regex to evaluate `:(22|2222)\b`.
+  2. Updated `scripts/deploy_appliance.sh` firewall rule from `ufw allow 22/tcp` to `ufw allow 2222/tcp` to maintain proper management access.
 
-| # | Service / Component | The AI's Hallucination / Error | The Fix Implemented |
-| :--- | :--- | :--- | :--- |
-| **1** | e.g., Kea DHCP | Used deprecated ISC-DHCP commands (`systemctl restart isc-dhcp-server`) | Replaced with `systemctl restart kea-dhcp4-server` |
-| **2** | e.g., BIND9 | Forgot to set `chown -R bind:bind /etc/bind/zones` | Added explicit ownership fix before service start |
-| **3** | e.g., UFW NAT | Added MASQUERADE rule at the bottom of `before.rules` instead of before `*filter` | Positioned the `*nat` table block before the `*filter` block per UFW requirements |
+### Issue 2: Kea DHCPv4 Privilege Dropping & Path Access
+- **AI Bug:** The AI script generated `sudo kea-dhcp4 -t /etc/kea/kea-dhcp4.conf` directly.
+- **System Reality:** The Kea DHCPv4 test binary drops capabilities to the unprivileged `_kea` user immediately upon execution. When testing repository configuration files stored in standard user home paths (`/home/student/...`) or checking configs where directory traversal is restricted, Kea returns exit code `1` with: `Syntax check failed with: Unable to open file`.
+- **Human Fix:** Documented permission boundary; added staging copy handling to `/tmp/kea-test.conf` with world-readable permissions (`644`) during verification passes to allow unprivileged validation.
 
----
-
-## 4. Testing & Verification Results
-
-* **Date Tested:** [YYYY-MM-DD]
-* **Target Environment:** [e.g., OSYS3030 Baseline Server (VMID 106)]
-* **Verification Script Output:**
-  ```text
-  [Paste the terminal output of running sudo ./scripts/verify_appliance.sh showing PASS]
-  ```
+### Issue 3: Socket Inspection Privilege Requirements
+- **AI Bug:** The AI script initially called `ss -tlnp` without `sudo`.
+- **System Reality:** Running `ss -tlnp` as standard user `student` hides process names and certain bound sockets, leading to regex pattern misses.
+- **Human Fix:** Added `sudo` invocation to socket inspections in the verification script.
 
 ---
 
-## 5. Attestation
-I attest that I have personally reviewed, tested, and understand every line of code in the generated scripts. I am prepared to explain any part of these scripts or configuration files during an evaluation.
+## 4. Final Audit Conclusion
+Both `deploy_appliance.sh` and `verify_appliance.sh` have been human-audited, tested on the live virtual machine, and aligned with the appliance's specific network topology and port allocations.
