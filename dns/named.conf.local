@@ -1,0 +1,4 @@
+zone "innovate.lab" {
+    type primary;
+    file "/etc/bind/db.innovate.lab";
+};
