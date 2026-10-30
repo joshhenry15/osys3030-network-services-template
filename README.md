@@ -1,8 +1,8 @@
 # OSYS3030 - Linux Network Appliance Documentation
 
-> **Student Name:** [Your Name]  
-> **Student ID / VMID:** [e.g., 106]  
-> **Repository:** [Public GitHub URL]  
+> **Student Name:** Josh
+> **Student ID / VMID:** w0524697
+> **Repository:** https://github.com/joshhenry15/osys3030-network-services-template 
 > **Instructor:** Matt Redmond  
 > **Course:** OSYS3030 - Network Services Using Linux  
 
@@ -94,6 +94,7 @@ See [`AI_AUDIT.md`](./AI_AUDIT.md) for documentation on how these scripts were g
 
 ## 6. Peer Review Audit
 
-* **Audited Classmate:** [Classmate Name] ([GitHub Profile URL / Repo URL])
-* **Classmate Appliance Subnet:** `10.<PartnerID>.0.0/24`
+* **Audited Classmate:** Eric https://github.com/WhiskersWatson/osys3030-network-services-template
+* **Classmate Appliance Subnet:** `10.110.0.0/24`
 * **Audit Summary:** [2–3 sentences summarizing your review of your peer's repository, configs, and recovery documentation].
+Eric is a reliable student, im sure everything worked great, i didnt see any issues! He also helped me a bit on this lab
